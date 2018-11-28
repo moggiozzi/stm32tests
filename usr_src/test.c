@@ -52,8 +52,8 @@ HAL_StatusTypeDef setReadProtect(void){
 	FLASH_OBProgramInitTypeDef ob;
 	FLASH_OBProgramInitTypeDef *pOBInit = &ob;
 	HAL_FLASHEx_OBGetConfig(pOBInit);
-    pOBInit->OptionType = OPTIONBYTE_PCROP;
-    pOBInit->PCROPSector = OB_PCROP_SECTOR_0 | OB_PCROP_SECTOR_1;
+  pOBInit->OptionType = OPTIONBYTE_PCROP;
+  pOBInit->PCROPSector = OB_PCROP_SECTOR_0 | OB_PCROP_SECTOR_1; //-нельзя применять к сектору с вектором прерываний
 	res |= HAL_FLASH_Unlock();
 	res |= HAL_FLASH_OB_Unlock();
 	res |= HAL_FLASHEx_OBProgram(pOBInit);
@@ -67,6 +67,8 @@ HAL_StatusTypeDef setReadProtect2(void){
 	FLASH_OBProgramInitTypeDef ob;
 	FLASH_OBProgramInitTypeDef *pOBInit = &ob;
 	HAL_FLASHEx_OBGetConfig(pOBInit);
+    pOBInit->OptionType = OPTIONBYTE_PCROP;
+    pOBInit->PCROPSector = OB_PCROP_SECTOR_1;
     pOBInit->OptionType = OPTIONBYTE_PCROP_RDP;
     pOBInit->PCROPRdp = OB_PCROP_RDP_ENABLE;
 	res |= HAL_FLASH_Unlock();
@@ -77,8 +79,26 @@ HAL_StatusTypeDef setReadProtect2(void){
 	return res;
 }
 
+HAL_StatusTypeDef setProtect(void){
+  HAL_StatusTypeDef res = HAL_OK;
+  FLASH_OBProgramInitTypeDef ob;
+  FLASH_OBProgramInitTypeDef *pOBInit = &ob;
+  memset(pOBInit, 0, sizeof(*pOBInit));
+  //HAL_FLASHEx_OBGetConfig(pOBInit);
+  pOBInit->OptionType = OPTIONBYTE_RDP | OPTIONBYTE_WRP;
+  pOBInit->RDPLevel = OB_RDP_LEVEL_1;
+  pOBInit->WRPState = OB_WRPSTATE_ENABLE;
+  pOBInit->WRPSector = OB_WRP_SECTOR_0 | OB_WRP_SECTOR_1;
+  res |= HAL_FLASH_Unlock();
+  res |= HAL_FLASH_OB_Unlock();
+  res |= HAL_FLASHEx_OBProgram(pOBInit);
+  res |= HAL_FLASH_OB_Launch();
+  res |= HAL_FLASH_OB_Lock();
+  return res;
+}
+
 void test(void){
-  HAL_StatusTypeDef res = setReadProtect2();
+  HAL_StatusTypeDef res = setProtect();
 
   printf("Hello %d\r\n", res);
 }
